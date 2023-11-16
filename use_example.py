@@ -1,7 +1,7 @@
 from new_glossary import ProcessedWord
 import glossary_utils
 
-word = ProcessedWord('oops')
+word = ProcessedWord('clingy')
 pos_preset = glossary_utils.PartsOfSpeech()
 print(word.spelling)
 print(word.transcription)

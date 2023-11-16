@@ -4,6 +4,35 @@ from pydantic import BaseModel
 import glossary_utils
 
 
+class ProcessedWord:
+    DEFAULT_PRINT_LIMIT = 5
+
+    def __init__(self, input_word: str):
+        parsed_word = ParsedWord.from_json(
+            json.dumps(requests.get(f'https://api.dictionaryapi.dev/api/v2/entries/en/{input_word}').json()[0])
+        )
+        self.spelling = parsed_word.word
+        self.transcription = parsed_word.phonetic
+        self.audio = parsed_word.get_audio()
+        self.definitions_mapping = parsed_word.get_definitions_mapping()
+        self.examples_mapping = parsed_word.get_example_mapping()
+        self.pos = list(self.definitions_mapping.keys())
+        self.print_limit = self.DEFAULT_PRINT_LIMIT
+
+    def set_print_limit(self, limit: int):
+        self.print_limit = limit
+
+    def get_pos_definitions(self, requested_pos):
+        if requested_pos in self.pos:
+            return self.definitions_mapping[requested_pos][0: self.print_limit]
+
+    def get_pos_examples(self, requested_pos):
+        if requested_pos in self.pos:
+            example_list = self.examples_mapping[requested_pos][0: self.print_limit]
+            if example_list:
+                return example_list
+
+
 class ParsedWord(BaseModel):
     word: str
     phonetic: str
@@ -39,34 +68,3 @@ class ParsedWord(BaseModel):
             if meaning:
                 mapping[p_o_s] = glossary_utils.get_example_list(meaning)
         return mapping
-
-
-class ProcessedWord:
-    DEFAULT_PRINT_LIMIT = 5
-
-    def __init__(self, input_word: str):
-        parsed_word = ParsedWord.from_json(
-            json.dumps(requests.get(f'https://api.dictionaryapi.dev/api/v2/entries/en/{input_word}').json()[0])
-        )
-        self.spelling = parsed_word.word
-        self.transcription = parsed_word.phonetic
-        self.audio = parsed_word.get_audio()
-        self.definitions_mapping = parsed_word.get_definitions_mapping()
-        self.examples_mapping = parsed_word.get_example_mapping()
-        self.pos = list(self.definitions_mapping.keys())
-        self.print_limit = self.DEFAULT_PRINT_LIMIT
-
-    def set_print_limit(self, limit: int):
-        self.print_limit = limit
-
-    def get_pos_definitions(self, requested_pos):
-        if requested_pos in self.pos:
-            return self.definitions_mapping[requested_pos][0: self.print_limit]
-
-    def get_pos_examples(self, requested_pos):
-        if requested_pos in self.pos:
-            example_list = self.examples_mapping[requested_pos][0: self.print_limit]
-            if example_list:
-                return example_list
-
-
